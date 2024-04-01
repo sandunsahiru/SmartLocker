@@ -1,60 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smartlocker/pages/services/session_manager.dart';
+import 'package:smartlocker/pages/lock_unlock_buttons.dart';
+import 'package:smartlocker/pages/battery_details.dart';
+import 'package:smartlocker/pages/adddevice.dart';
+import 'package:smartlocker/pages/settings.dart';
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
+class HomePage extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    const Color primaryColor = Color(0xFF5356FF);
-    const Color secondaryColor = Color(0xFF378CE7);
-    const Color lightColor = Color(0xFFDFF5FF);
-    const Color accentColor = Color(0xFF67C6E3);
-
-    return MaterialApp(
-      title: 'Device Control',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.light(
-          primary: primaryColor,
-          secondary: secondaryColor,
-          background: lightColor,
-          onPrimary: Colors.white,
-          onSecondary: Colors.white,
-        ),
-        textTheme: GoogleFonts.openSansTextTheme(
-          ThemeData.light().textTheme.apply(
-            bodyColor: primaryColor,
-            displayColor: primaryColor,
-          ),
-        ),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: MyHomePage(),
-    );
-  }
+  _HomePageState createState() => _HomePageState();
 }
 
-class MyHomePage extends StatefulWidget {
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
+class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  List<String> _deviceNicknames = [];
+  Map<String, String> _deviceIdMap = {};
+  String? _selectedDeviceNickname;
+  Future<String>? _usernameFuture;
 
   void _onItemTapped(int index) {
     setState(() {
       _currentIndex = index;
     });
+    if (index == 0) {
+      // User tapped on Home, do nothing or refresh the page if needed
+    } else if (index == 1) {
+      // User tapped on Settings, navigate to the SettingsPage
+      Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDevices();
+  }
+
+  void _loadUserDevices() async {
+    final prefs = await SharedPreferences.getInstance();
+    final sessionManager = SessionManager(prefs);
+    String uid = sessionManager.getUserUID() ?? '';
+
+    if (uid.isNotEmpty) {
+      setState(() {
+        _usernameFuture = _fetchUsername(uid);
+      });
+
+      var devicesQuerySnapshot = await FirebaseFirestore.instance
+          .collection('devices')
+          .where('userid', isEqualTo: uid)
+          .get();
+
+      _deviceNicknames.clear();
+      _deviceIdMap.clear();
+
+      for (var doc in devicesQuerySnapshot.docs) {
+        String nickname = doc.data()['nickname'] as String;
+        String deviceId = doc.data()['deviceid'] as String;
+        _deviceNicknames.add(nickname);
+        _deviceIdMap[nickname] = deviceId;
+      }
+
+      if (_deviceNicknames.isNotEmpty) {
+        _selectedDeviceNickname = _deviceNicknames.first;
+      }
+
+      setState(() {});
+    }
+  }
+
+  Future<String> _fetchUsername(String uid) async {
+    var userDocument = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    return userDocument.data()?['username'] ?? 'User';
+  }
+
+
+
+  void _handleDeviceSelectionChange(String deviceId) {
+    // Here you could also update other widgets like BatteryDetails based on the selected device
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: null,
+      appBar: AppBar(
+        title: Text('Home', style: GoogleFonts.openSans()),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SingleChildScrollView(
         child: Container(
           padding: EdgeInsets.all(16.0),
@@ -63,21 +97,47 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Image.asset('assets/logo.png'),
               SizedBox(height: 20),
-              Text(
-                'Welcome D0001',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headline5?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ) ?? TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                  color: Theme.of(context).colorScheme.primary,
+              FutureBuilder<String>(
+                future: _usernameFuture,
+                builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+                  String welcomeText = 'Loading...';
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    welcomeText = 'Welcome, ${snapshot.data}';
+                  }
+                  return Text(
+                    welcomeText,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.openSans(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 30),
+              if (_selectedDeviceNickname != null)
+                LockUnlockButtons(
+                  deviceNicknames: _deviceNicknames,
+                  deviceIdMap: _deviceIdMap,
+                  onSelectedDeviceChanged: _handleDeviceSelectionChange,
+                ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => AddDevicePage(),
+                  ));
+                },
+                child: Text('Add Device'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Colors.white,
                 ),
               ),
               SizedBox(height: 30),
-              _buildDeviceSection(context),
-              SizedBox(height: 30),
-              _buildBatterySection(context),
+              if (_selectedDeviceNickname != null)
+                BatteryDetails(deviceId: _deviceIdMap[_selectedDeviceNickname] ?? ''),
             ],
           ),
         ),
@@ -85,8 +145,8 @@ class _MyHomePageState extends State<MyHomePage> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
-            label: 'Menu',
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
@@ -97,91 +157,6 @@ class _MyHomePageState extends State<MyHomePage> {
         selectedItemColor: Theme.of(context).colorScheme.secondary,
         onTap: _onItemTapped,
       ),
-    );
-  }
-
-  Widget _buildDeviceSection(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.background,
-      elevation: 4.0,
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            Text(
-              'Device ID - D0001',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                _buildButton(context, 'LOCK', Theme.of(context).colorScheme.primary),
-                SizedBox(width: 16),
-                _buildButton(context, 'UNLOCK', Theme.of(context).colorScheme.secondary),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildButton(BuildContext context, String text, Color color) {
-    return Expanded(
-      child: ElevatedButton(
-        onPressed: () {},
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(text),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBatterySection(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.background,
-      elevation: 4.0,
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            _buildInfoRow(context, 'Battery Level:', '75%'),
-            SizedBox(height: 10),
-            _buildInfoRow(context, 'Temperature:', '23°C'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(BuildContext context, String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        Text(
-          label,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onBackground,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ],
     );
   }
 }

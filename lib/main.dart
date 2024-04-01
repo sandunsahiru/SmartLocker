@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smartlocker/pages/home.dart';
+import 'package:smartlocker/pages/welcomepage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:smartlocker/firebase_options.dart';
 
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(),
+      home: WelcomePage(),
     );
   }
 }
