@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:smartlocker/pages/battery_details.dart';
+import 'package:smartlocker/pages/map.dart';
 
 class LockUnlockButtons extends StatefulWidget {
   final List<String> deviceNicknames;
@@ -106,6 +107,24 @@ class _LockUnlockButtonsState extends State<LockUnlockButtons> {
               ),
             ],
           ),
+          // Inside LockUnlockButtons class, under the existing buttons:
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _selectedDeviceNickname != null ? () {
+              final deviceId = widget.deviceIdMap[_selectedDeviceNickname!];
+              if (deviceId != null) {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => MapPage(deviceId: deviceId),
+                ));
+              }
+            } : null,
+            child: Text('Locate Me'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+
         ],
       ],
     );
