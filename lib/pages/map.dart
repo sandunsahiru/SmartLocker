@@ -14,15 +14,17 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  FirebaseDatabase database = FirebaseDatabase.instance; // Ensure that this is the correct instance
+  late final FirebaseDatabase database;
   GoogleMapController? mapController;
-  LatLng _currentPosition = LatLng(6.821934686130015, 80.04154817409899); // Initial position set to Sri Lanka
+  LatLng _currentPosition = LatLng(6.821934686130015, 80.04154817409899);
   bool _isLoading = true;
   String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
+    // Initialize Firebase Database with the specified URL.
+    database = FirebaseDatabase(databaseURL: "https://smartlockerintellilock-default-rtdb.asia-southeast1.firebasedatabase.app");
     print('Initializing MapPage with deviceId: ${widget.deviceId}'); // Print the device ID for debugging
     _listenToLocationChanges();
   }
@@ -34,10 +36,8 @@ class _MapPageState extends State<MapPage> {
       print('Location data stream received: ${event.snapshot.value}'); // Indicates data received
       final data = event.snapshot.value as Map<dynamic, dynamic>?;
       if (data != null) {
-        final latitudeStr = data['latitude'] as String?;
-        final longitudeStr = data['longitude'] as String?;
-        final latitude = double.tryParse(latitudeStr ?? '');
-        final longitude = double.tryParse(longitudeStr ?? '');
+        final latitude = data['latitude'] as double?;
+        final longitude = data['longitude'] as double?;
         print('Fetched Latitude: $latitude, Fetched Longitude: $longitude'); // Print the fetched coordinates
 
         if (latitude != null && longitude != null) {

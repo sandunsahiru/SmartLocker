@@ -32,6 +32,15 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Required for precise location -->
+        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+        <!-- Required for approximate location -->
+        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+        <!-- If targeting Android 10 (API level 29) or higher, use the 'ACCESS_BACKGROUND_LOCATION' permission for receiving location updates in the background -->
+        <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility?hl=en and

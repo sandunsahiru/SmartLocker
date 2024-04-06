@@ -21,8 +21,9 @@ class LockUnlockButtons extends StatefulWidget {
 
 class _LockUnlockButtonsState extends State<LockUnlockButtons> {
   String? _selectedDeviceNickname;
-  bool? _isLocked; // The lock status is now nullable for initial loading
-  late final FirebaseDatabase database; // Declare FirebaseDatabase instance here
+  bool? _isLocked;
+  bool _showBatteryDetails = false; // State to manage visibility of BatteryDetails
+  late final FirebaseDatabase database;
 
   @override
   void initState() {
@@ -35,19 +36,19 @@ class _LockUnlockButtonsState extends State<LockUnlockButtons> {
   }
 
   Future<void> _fetchLockStatus(String deviceId) async {
-    DatabaseReference ref = database.ref('$deviceId/status'); // Use the database instance
+    DatabaseReference ref = database.ref('$deviceId/status');
     DatabaseEvent event = await ref.once();
     if (event.snapshot.exists) {
       setState(() {
-        _isLocked = event.snapshot.value == 'locked';
+        _isLocked = event.snapshot.value == true;
       });
     }
   }
 
   Future<void> _setLockStatus(String deviceId, bool lock) async {
-    DatabaseReference ref = database.ref('$deviceId/status'); // Use the database instance
-    await ref.set(lock ? 'locked' : 'unlocked');
-    _fetchLockStatus(deviceId); // Fetch the latest status after setting it
+    DatabaseReference ref = database.ref('$deviceId/status');
+    await ref.set(lock);
+    _fetchLockStatus(deviceId);
   }
 
   @override
@@ -107,7 +108,6 @@ class _LockUnlockButtonsState extends State<LockUnlockButtons> {
               ),
             ],
           ),
-          // Inside LockUnlockButtons class, under the existing buttons:
           SizedBox(height: 20),
           ElevatedButton(
             onPressed: _selectedDeviceNickname != null ? () {
@@ -124,7 +124,24 @@ class _LockUnlockButtonsState extends State<LockUnlockButtons> {
               foregroundColor: Colors.white,
             ),
           ),
-
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                // Toggling visibility instead of navigating to a new page
+                _showBatteryDetails = !_showBatteryDetails;
+              });
+            },
+            child: Text(_showBatteryDetails ? 'Hide Details' : 'Show Details'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+          Visibility(
+            visible: _showBatteryDetails,
+            child: _selectedDeviceNickname != null ? BatteryDetails(deviceId: widget.deviceIdMap[_selectedDeviceNickname!]!) : Container(),
+          ),
         ],
       ],
     );

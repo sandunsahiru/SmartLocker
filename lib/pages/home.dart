@@ -135,9 +135,9 @@ class _HomePageState extends State<HomePage> {
                   foregroundColor: Colors.white,
                 ),
               ),
-              SizedBox(height: 30),
-              if (_selectedDeviceNickname != null)
-                BatteryDetails(deviceId: _deviceIdMap[_selectedDeviceNickname] ?? ''),
+              // SizedBox(height: 30),
+              // if (_selectedDeviceNickname != null)
+              //   BatteryDetails(deviceId: _deviceIdMap[_selectedDeviceNickname] ?? ''),
             ],
           ),
         ),
