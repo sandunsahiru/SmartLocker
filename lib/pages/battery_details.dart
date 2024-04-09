@@ -11,7 +11,6 @@ class BatteryDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize the Firebase Realtime Database with the provided URL
     final FirebaseDatabase database = FirebaseDatabase(
       databaseURL: "https://smartlockerintellilock-default-rtdb.asia-southeast1.firebasedatabase.app",
     );
@@ -22,32 +21,20 @@ class BatteryDetails extends StatelessWidget {
       elevation: 4.0,
       child: Padding(
         padding: EdgeInsets.all(16.0),
-        child: FutureBuilder<DataSnapshot>(
-          // Use the database reference to directly get the data for the deviceId
-          future: databaseReference.child(deviceId).get(),
-          builder: (BuildContext context, AsyncSnapshot<DataSnapshot> snapshot) {
-            // Print statements for debugging
-            debugPrint('Connection state: ${snapshot.connectionState}');
-            if (snapshot.hasData) {
-              debugPrint('Data received: ${snapshot.data!.value}');
-            }
-            if (snapshot.hasError) {
-              debugPrint('Error: ${snapshot.error}');
-            }
-
+        child: StreamBuilder<DatabaseEvent>(
+          stream: databaseReference.child(deviceId).onValue,
+          builder: (BuildContext context, AsyncSnapshot<DatabaseEvent> snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (snapshot.hasData && snapshot.data!.value != null) {
-              // Assuming the data is in the expected format and the node exists
-              final data = Map<String, dynamic>.from(snapshot.data!.value as Map);
+            } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
+              final data = Map<String, dynamic>.from(snapshot.data!.snapshot.value as Map);
               final batteryLevel = data['battery']?.toString() ?? 'N/A';
               final temperature = data['temp']?.toString() ?? 'N/A';
               final humidity = data['humidity']?.toString() ?? 'N/A';
               final motion = data['motion'] == true ? 'Motion Detected' : 'Normal';
 
-              // Use the retrieved values to build the UI
               return Column(
                 children: <Widget>[
                   _buildInfoRow(context, 'Device ID:', deviceId),
@@ -62,7 +49,6 @@ class BatteryDetails extends StatelessWidget {
                 ],
               );
             } else {
-              debugPrint('Snapshot has no data or an unexpected null.');
               return Center(child: Text('No data available'));
             }
           },

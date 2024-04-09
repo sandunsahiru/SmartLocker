@@ -1,8 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+        <!-- Required for precise location -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+        <!-- Required for approximate location -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+        <!-- If targeting Android 10 (API level 29) or higher, use the 'ACCESS_BACKGROUND_LOCATION' permission for receiving location updates in the background -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <application
         android:label="smartlocker"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyD9frHtLF5jWElTlT2CVLzOxFM1qUGdmFs"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -19,8 +29,6 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-            <meta-data android:name="com.google.android.geo.API_KEY"
-                android:value="AIzaSyD9frHtLF5jWElTlT2CVLzOxFM1qUGdmFs"/>
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -32,14 +40,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-<!--        &lt;!&ndash; Required for precise location &ndash;&gt;-->
-<!--        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />-->
 
-<!--        &lt;!&ndash; Required for approximate location &ndash;&gt;-->
-<!--        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
-
-<!--        &lt;!&ndash; If targeting Android 10 (API level 29) or higher, use the 'ACCESS_BACKGROUND_LOCATION' permission for receiving location updates in the background &ndash;&gt;-->
-<!--        <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />-->
 
     </application>
     <!-- Required to query activities that can process text, see:
